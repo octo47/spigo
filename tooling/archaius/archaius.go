@@ -52,6 +52,9 @@ type Configuration struct {
 	// Collect turns on Metrics collection
 	Collect bool `json:"collect"`
 
+	// Collect turns on Measurement
+	Measure bool `json:"measure"`
+
 	// Kafka turns on Zipkin compatible Flow export if array of host:port strings is not empty
 	Kafka []string `json:"kafka"`
 

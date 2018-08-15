@@ -47,7 +47,7 @@ var sampleLock sync.Mutex
 // NewHist creates a new histogram
 func NewHist(name string) *generic.Histogram {
 	var h *generic.Histogram
-	if name != "" && archaius.Conf.Collect {
+	if name != "" && archaius.Conf.Measure {
 		h = generic.NewHistogram(name, 100) // 1000, maxHistObservable, 1, []int{50, 99}...)
 		sampleLock.Lock()
 		if sampleMap == nil {
@@ -62,7 +62,7 @@ func NewHist(name string) *generic.Histogram {
 
 // Measure adds a measurement to a histogram collection
 func Measure(h *generic.Histogram, d time.Duration) {
-	if h != nil && archaius.Conf.Collect {
+	if h != nil && archaius.Conf.Measure {
 		if d > maxHistObservable {
 			h.Observe(float64(maxHistObservable))
 		} else {
@@ -79,7 +79,7 @@ func Measure(h *generic.Histogram, d time.Duration) {
 
 // SaveHist passes in name because metrics.Histogram blocks expvar.Histogram.Name()
 func SaveHist(h *generic.Histogram, name, suffix string) {
-	if archaius.Conf.Collect {
+	if archaius.Conf.Measure {
 		file, err := os.Create("csv_metrics/" + names.Arch(name) + "_" + names.Instance(name) + suffix + ".csv")
 		if err != nil {
 			log.Fatal("Save histogram %v: %v\n", name, err)

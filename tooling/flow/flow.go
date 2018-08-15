@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/adrianco/spigo/tooling/names"
+
 	"github.com/adrianco/spigo/tooling/archaius"
 	"github.com/adrianco/spigo/tooling/collect"
 	"github.com/adrianco/spigo/tooling/dhcp"
@@ -63,8 +65,8 @@ type spannotype struct {
 // ByCtx sortable spans
 type ByCtx []*spannotype
 
-func (a ByCtx) Len() int             { return len(a) }
-func (a ByCtx) Swap(i, j int)        { a[i], a[j] = a[j], a[i] }
+func (a ByCtx) Len() int      { return len(a) }
+func (a ByCtx) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a ByCtx) Less(i, j int) bool { // sort by span first then time
 	if a[i].Ctx == a[j].Ctx {
 		return a[i].Timestamp < a[j].Timestamp
@@ -309,7 +311,22 @@ func Flush(t gotocol.TraceContextType, trace []*spannotype) {
 			ctx = a.Ctx
 		}
 		var ann zipkinannotation
-		ann.Endpoint.Servicename = a.Host
+		/*
+			arch      hier = iota // netflixoss - architecture or AWS account level
+			region                // us-east-1a - AWS region or equivalent
+			zone                  // zoneA      - availability zone or datacenter
+			machine               // ecs        - container orchestrator or physical machine name
+			instance              // docker:0   - specific booted instance of service, or "docker:X"
+			container             // homepage:1 - container name:id within instance
+			process               // node:100   - process name/pid within container
+			service               // homepage   - service type or application name
+			gopackage             // karyon     - go package of code to implement service, like AMI or VM
+		*/
+		ann.Endpoint.Servicename = fmt.Sprintf("%s/%s/%s",
+			names.Arch(a.Host),
+			names.Service(a.Host),
+			names.AMI(a.Host),
+		)
 		ann.Endpoint.Ipv4 = dhcp.Lookup(a.Host)
 		ann.Endpoint.Port = 8080
 		ann.Timestamp = a.Timestamp / 1000 // convert from UnixNano to Microseconds

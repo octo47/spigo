@@ -22,6 +22,9 @@ import (
 	"github.com/adrianco/spigo/tooling/migration"    // migration from LAMP to netflixoss
 )
 
+import _ "net/http/pprof"
+import "net/http"
+
 var addrs string
 var reload, graphmlEnabled, graphjsonEnabled, neo4jEnabled bool
 var duration, cpucount int
@@ -37,7 +40,8 @@ func main() {
 	flag.BoolVar(&neo4jEnabled, "n", false, "Enable Neo4j logging of nodes and edges")
 	flag.BoolVar(&archaius.Conf.Msglog, "m", false, "Enable console logging of every message")
 	flag.BoolVar(&reload, "r", false, "Reload graph from json/<arch>.json to setup architecture")
-	flag.BoolVar(&archaius.Conf.Collect, "c", false, "Collect metrics and flows to json_metrics csv_metrics neo4j and via http: extvars")
+	flag.BoolVar(&archaius.Conf.Collect, "c", false, "Collect flows to json_metrics")
+	flag.BoolVar(&archaius.Conf.Measure, "h", false, "Measure histograms to json_metrics")
 	flag.StringVar(&addrs, "k", "", "Send Zipkin spans to Kafka if Collect is enabled. Provide list of comma separated host:port addresses")
 	flag.IntVar(&archaius.Conf.StopStep, "s", 0, "Sequence number to create multiple runs for ui to step through in json/<arch><s>.json")
 	flag.StringVar(&archaius.Conf.EurekaPoll, "u", "1s", "Polling interval for Eureka name service, increase for large populations")
@@ -102,6 +106,10 @@ func main() {
 	if *saveConfFile {
 		archaius.WriteConf()
 	}
+
+	go func() {
+		log.Println(http.ListenAndServe(":8124", nil))
+	}()
 
 	// start up the selected architecture
 	go edda.Start(archaius.Conf.Arch + ".edda") // start edda first
